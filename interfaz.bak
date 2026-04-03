@@ -1,0 +1,8 @@
+#lang racket
+(require racket/gui)
+(require "logica.rkt")
+
+(provide iniciar-interfaz)
+
+(define (iniciar-interfaz)
+  (displayln "La interfaz se hará después."))

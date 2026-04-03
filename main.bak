@@ -1,0 +1,14 @@
+#lang racket
+
+(require "logica.rkt")
+
+(define tablero-inicial (crear-tablero 4 4))
+(displayln "Tablero vacío:")
+(imprimir-tablero tablero-inicial)
+
+(define tablero-con-dos (insertar-dos-iniciales tablero-inicial))
+(displayln "Tablero con dos 2 iniciales:")
+(imprimir-tablero tablero-con-dos)
+
+(displayln "Posiciones vacías:")
+(displayln (posiciones-vacias tablero-con-dos))

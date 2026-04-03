@@ -1,0 +1,96 @@
+#lang racket
+
+(provide crear-tablero
+         imprimir-tablero
+         posiciones-vacias
+         insertar-en-posicion
+         insertar-dos-iniciales)
+
+;; crear una fila de n ceros
+(define (crear-fila n)
+  (if (= n 0)
+      '()
+      (cons 0 (crear-fila (- n 1)))))
+
+;; crear un tablero de filas x columnas
+(define (crear-tablero filas columnas)
+  (if (= filas 0)
+      '()
+      (cons (crear-fila columnas)
+            (crear-tablero (- filas 1) columnas))))
+
+;; imprimir tablero bonito en consola
+(define (imprimir-tablero tablero)
+  (cond
+    [(null? tablero) (newline)]
+    [else
+     (displayln (car tablero))
+     (imprimir-tablero (cdr tablero))]))
+
+;; obtener elemento en índice
+(define (elemento-en lista indice)
+  (cond
+    [(null? lista) #f]
+    [(= indice 0) (car lista)]
+    [else (elemento-en (cdr lista) (- indice 1))]))
+
+;; reemplazar elemento en índice
+(define (reemplazar-en-lista lista indice valor)
+  (cond
+    [(null? lista) '()]
+    [(= indice 0) (cons valor (cdr lista))]
+    [else (cons (car lista)
+                (reemplazar-en-lista (cdr lista) (- indice 1) valor))]))
+
+;; insertar valor en una posición [fila, columna]
+(define (insertar-en-posicion tablero fila columna valor)
+  (cond
+    [(null? tablero) '()]
+    [(= fila 0)
+     (cons (reemplazar-en-lista (car tablero) columna valor)
+           (cdr tablero))]
+    [else
+     (cons (car tablero)
+           (insertar-en-posicion (cdr tablero) (- fila 1) columna valor))]))
+
+;; obtener todas las posiciones vacías como lista de (fila columna)
+(define (posiciones-vacias tablero)
+  (define (aux-filas tablero fila-actual)
+    (cond
+      [(null? tablero) '()]
+      [else
+       (append (aux-columnas (car tablero) fila-actual 0)
+               (aux-filas (cdr tablero) (+ fila-actual 1)))]))
+  
+  (define (aux-columnas fila fila-actual columna-actual)
+    (cond
+      [(null? fila) '()]
+      [(= (car fila) 0)
+       (cons (list fila-actual columna-actual)
+             (aux-columnas (cdr fila) fila-actual (+ columna-actual 1)))]
+      [else
+       (aux-columnas (cdr fila) fila-actual (+ columna-actual 1))]))
+  
+  (aux-filas tablero 0))
+
+;; escoger un elemento aleatorio de una lista
+(define (elemento-random lista)
+  (if (null? lista)
+      #f
+      (list-ref lista (random (length lista)))))
+
+;; insertar un 2 en una posición vacía aleatoria
+(define (insertar-un-2-random tablero)
+  (let* ([vacias (posiciones-vacias tablero)]
+         [pos (elemento-random vacias)])
+    (if (not pos)
+        tablero
+        (insertar-en-posicion tablero
+                              (car pos)
+                              (cadr pos)
+                              2))))
+
+;; insertar los dos 2 iniciales
+(define (insertar-dos-iniciales tablero)
+  (insertar-un-2-random
+   (insertar-un-2-random tablero)))
