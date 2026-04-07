@@ -1,5 +1,4 @@
 #lang racket
-
 (provide tablero-inicial
          crear-tablero
          imprimir-tablero
@@ -14,7 +13,8 @@
          jugada-arriba
          jugada-abajo
          tableros-iguales?
-         insertar-ficha-random)
+         insertar-ficha-random
+         hay-2048?)
 
 ; ============================================================
 ; CREACIÓN DEL TABLERO
@@ -297,6 +297,27 @@
           #f
           (list-ref vacias (random (length vacias))))))
    (posiciones-vacias tablero)))
+
+
+; ============================================================
+; DETECTAR VICTORIA (2048)
+; ============================================================
+
+; revisa si una fila contiene 2048
+(define (fila-tiene-2048? fila)
+  (cond
+    [(null? fila) #f]
+    [(= (car fila) 2048) #t]
+    [else
+     (fila-tiene-2048? (cdr fila))]))
+
+; revisa si el tablero contiene 2048
+(define (hay-2048? tablero)
+  (cond
+    [(null? tablero) #f]
+    [(fila-tiene-2048? (car tablero)) #t]
+    [else
+     (hay-2048? (cdr tablero))]))
 
 ; ============================================================
 ; JUGADAS COMPLETAS
