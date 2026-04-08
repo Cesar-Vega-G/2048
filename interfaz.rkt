@@ -11,21 +11,22 @@
 (define (color-ficha valor)
   (cond
     [(= valor 0)    "lightgray"]
-    [(= valor 2)    "#eee4da"]
-    [(= valor 4)    "#ede0c8"]
-    [(= valor 8)    "#f2b179"]
-    [(= valor 16)   "#f59563"]
-    [(= valor 32)   "#f67c5f"]
-    [(= valor 64)   "#f65e3b"]
-    [(= valor 128)  "#edcf72"]
-    [(= valor 256)  "#edcc61"]
-    [(= valor 512)  "#edc850"]
-    [(= valor 1024) "#edc53f"]
-    [(= valor 2048) "#edc22e"]
-    [else           "#3c3a32"]))
+    [(= valor 2)    "lightyellow"]
+    [(= valor 4)    "moccasin"]
+    [(= valor 8)    "orange"]
+    [(= valor 16)   "darkorange"]
+    [(= valor 32)   "tomato"]
+    [(= valor 64)   "orangered"]
+    [(= valor 128)  "gold"]
+    [(= valor 256)  "yellow"]
+    [(= valor 512)  "khaki"]
+    [(= valor 1024) "goldenrod"]
+    [(= valor 2048) "darkgoldenrod"]
+    [else           "dimgray"]))
 
 (define (color-texto valor)
-  (if (< valor 16) "#776e65" "white"))
+  (if (< valor 16) "black" "white"))
+
 
 ; --------------------------------------------
 ; Ventana del juego
@@ -83,8 +84,8 @@
 
   ; dibuja la pantalla completa
   (define (dibujar-todo dc)
-    (send dc set-brush "white" 'solid)
-    (send dc clear)
+  (send dc set-background (make-object color% "whitesmoke"))
+  (send dc clear)
     ; puntaje
     (send dc set-text-foreground "black")
     (send dc set-font (make-object font% 16 'default 'normal 'bold))
