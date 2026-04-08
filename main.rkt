@@ -68,3 +68,51 @@
     (2 2 0 4)
     (0 2 2 0)
     (0 0 2 4))))
+
+(displayln "Prueba comparar tableros:")
+(displayln
+ (tableros-iguales?
+  '((2 0)
+    (0 2))
+  '((4 0)
+    (0 2))))
+
+(displayln
+ (tablero-cambio?
+  '((2 0)
+    (0 2))
+  '((4 0)
+    (0 0))))
+
+(displayln "Prueba aplicar movimiento sin ficha nueva:")
+(imprimir-tablero
+ (aplicar-movimiento
+  '((2 0 2 4)
+    (2 2 2 0)
+    (0 4 0 4)
+    (2 0 0 2))
+  'izquierda))
+
+(displayln "Prueba aplicar jugada completa:")
+(imprimir-tablero
+ (aplicar-jugada
+  '((2 0 2 4)
+    (2 2 2 0)
+    (0 4 0 4)
+    (2 0 0 2))
+  'izquierda))
+
+(displayln "Prueba victoria:")
+(displayln
+ (victoria?
+  '((2 4 8 16)
+    (32 64 128 256)
+    (512 1024 2048 0)
+    (0 0 0 0))))
+
+(displayln
+ (victoria?
+  '((2 4 8 16)
+    (32 64 128 256)
+    (512 1024 1024 0)
+    (0 0 0 0))))

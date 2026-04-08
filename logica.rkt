@@ -14,7 +14,14 @@
          obtener-columna
          reemplazar-columna
          mover-tablero-arriba
-         mover-tablero-abajo)
+         mover-tablero-abajo
+         tableros-iguales?
+         tablero-cambio?
+         valor-nuevo-random
+         insertar-ficha-random
+         aplicar-movimiento
+         aplicar-jugada
+         victoria?)
 
 ; ------------------------------------------------------------
 ; FUNCIONES PARA CREAR EL TABLERO
@@ -271,6 +278,124 @@
       (mover-columnas-abajo tablero
                             0
                             (cantidad-elementos (car tablero)))))
+
+; ------------------------------------------------------------
+; COMPARAR TABLEROS
+; ------------------------------------------------------------
+
+; listas-iguales?:
+; compara dos listas elemento por elemento.
+(define (listas-iguales? lista1 lista2)
+  (cond
+    [(and (null? lista1) (null? lista2)) #t]
+    [(or (null? lista1) (null? lista2)) #f]
+    [(equal? (car lista1) (car lista2))
+     (listas-iguales? (cdr lista1) (cdr lista2))]
+    [else #f]))
+
+; tableros-iguales?:
+; compara dos tableros fila por fila.
+(define (tableros-iguales? tablero1 tablero2)
+  (cond
+    [(and (null? tablero1) (null? tablero2)) #t]
+    [(or (null? tablero1) (null? tablero2)) #f]
+    [(listas-iguales? (car tablero1) (car tablero2))
+     (tableros-iguales? (cdr tablero1) (cdr tablero2))]
+    [else #f]))
+
+; tablero-cambio?:
+; devuelve #t si el tablero cambió después del movimiento.
+(define (tablero-cambio? tablero-original tablero-nuevo)
+  (not (tableros-iguales? tablero-original tablero-nuevo)))
+
+; ------------------------------------------------------------
+; GENERAR NUEVA FICHA
+; ------------------------------------------------------------
+
+; valor-nuevo-random:
+; devuelve 2 o 4 aleatoriamente.
+(define (valor-nuevo-random)
+  (if (= (random 2) 0)
+      2
+      4))
+
+; insertar-ficha-random:
+; inserta una ficha nueva (2 o 4) en una posición vacía aleatoria.
+; si no hay espacios vacíos, devuelve el tablero igual.
+(define (insertar-ficha-random tablero)
+  (insertar-ficha-random-aux tablero
+                             (elemento-random
+                              (posiciones-vacias tablero))))
+
+; insertar-ficha-random-aux:
+; auxiliar para evitar let.
+(define (insertar-ficha-random-aux tablero posicion)
+  (if (not posicion)
+      tablero
+      (insertar-en-posicion tablero
+                            (car posicion)
+                            (cadr posicion)
+                            (valor-nuevo-random))))
+
+; ------------------------------------------------------------
+; APLICAR MOVIMIENTOS Y JUGADAS
+; ------------------------------------------------------------
+
+; aplicar-movimiento:
+; recibe un tablero y una dirección.
+; direcciones válidas:
+; 'izquierda
+; 'derecha
+; 'arriba
+; 'abajo
+(define (aplicar-movimiento tablero direccion)
+  (cond
+    [(equal? direccion 'izquierda)
+     (mover-tablero-izquierda tablero)]
+    [(equal? direccion 'derecha)
+     (mover-tablero-derecha tablero)]
+    [(equal? direccion 'arriba)
+     (mover-tablero-arriba tablero)]
+    [(equal? direccion 'abajo)
+     (mover-tablero-abajo tablero)]
+    [else tablero]))
+
+; aplicar-jugada:
+; hace la jugada completa.
+; si el tablero cambió, agrega una ficha nueva.
+; si no cambió, devuelve el tablero original.
+(define (aplicar-jugada tablero direccion)
+  (aplicar-jugada-aux tablero
+                      (aplicar-movimiento tablero direccion)))
+
+; aplicar-jugada-aux:
+; auxiliar para evitar let.
+(define (aplicar-jugada-aux tablero-original tablero-movido)
+  (if (tablero-cambio? tablero-original tablero-movido)
+      (insertar-ficha-random tablero-movido)
+      tablero-original))
+
+; ------------------------------------------------------------
+; DETECTAR VICTORIA
+; ------------------------------------------------------------
+
+; fila-contiene-2048?:
+; revisa si una fila tiene una casilla con valor 2048.
+(define (fila-contiene-2048? fila)
+  (cond
+    [(null? fila) #f]
+    [(= (car fila) 2048) #t]
+    [else
+     (fila-contiene-2048? (cdr fila))]))
+
+; victoria?:
+; revisa si en alguna fila del tablero existe una casilla 2048.
+(define (victoria? tablero)
+  (cond
+    [(null? tablero) #f]
+    [(fila-contiene-2048? (car tablero)) #t]
+    [else
+     (victoria? (cdr tablero))]))
 
 ; ------------------------------------------------------------
 ; FUNCIÓN PARA INSERTAR UN VALOR EN EL TABLERO
