@@ -27,3 +27,28 @@
 
 ; Imprime la lista de posiciones donde todavía hay un 0
 (displayln (posiciones-vacias tablero-con-dos))
+(displayln "Prueba mover fila a la izquierda:")
+(displayln (mover-fila-izquierda '(2 0 2 4)))
+(displayln (mover-fila-izquierda '(2 2 2 0)))
+(displayln (mover-fila-izquierda '(2 2 2 2)))
+
+(displayln "Prueba mover tablero a la izquierda:")
+(imprimir-tablero
+ (mover-tablero-izquierda
+  '((2 0 2 4)
+    (2 2 2 0)
+    (0 4 0 4)
+    (2 0 0 2))))
+
+(displayln "Prueba mover fila a la derecha:")
+(displayln (mover-fila-derecha '(2 0 2 4)))
+(displayln (mover-fila-derecha '(2 2 2 0)))
+(displayln (mover-fila-derecha '(2 2 2 2)))
+
+(displayln "Prueba mover tablero a la derecha:")
+(imprimir-tablero
+ (mover-tablero-derecha
+  '((2 0 2 4)
+    (2 2 2 0)
+    (0 4 0 4)
+    (2 0 0 2))))

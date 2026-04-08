@@ -6,7 +6,11 @@
          imprimir-tablero
          posiciones-vacias
          insertar-en-posicion
-         insertar-dos-iniciales)
+         insertar-dos-iniciales
+         mover-fila-izquierda
+         mover-tablero-izquierda
+         mover-fila-derecha
+         mover-tablero-derecha)
 
 ; ------------------------------------------------------------
 ; FUNCIONES PARA CREAR EL TABLERO
@@ -75,7 +79,125 @@
     [else
      (cons (car lista)
            (reemplazar-en-lista (cdr lista) (- indice 1) valor))]))
+; ------------------------------------------------------------
+; FUNCIONES PARA MOVER A LA IZQUIERDA
+; ------------------------------------------------------------
 
+; cantidad-elementos:
+; cuenta cuántos elementos tiene una lista.
+(define (cantidad-elementos lista)
+  (if (null? lista)
+      0
+      (+ 1 (cantidad-elementos (cdr lista)))))
+
+; concatenar:
+; une dos listas sin usar funciones prohibidas.
+(define (concatenar lista1 lista2)
+  (if (null? lista1)
+      lista2
+      (cons (car lista1)
+            (concatenar (cdr lista1) lista2))))
+
+; quitar-ceros-fila:
+; elimina todos los 0 de una fila.
+; Ejemplo:
+; (quitar-ceros-fila '(2 0 2 4)) -> '(2 2 4)
+(define (quitar-ceros-fila fila)
+  (cond
+    [(null? fila) '()]
+    [(= (car fila) 0)
+     (quitar-ceros-fila (cdr fila))]
+    [else
+     (cons (car fila)
+           (quitar-ceros-fila (cdr fila)))]))
+
+; combinar-fila-izquierda:
+; asume que la fila ya no tiene ceros.
+; combina solo una vez por jugada.
+; Ejemplos:
+; (combinar-fila-izquierda '(2 2 4)) -> '(4 4)
+; (combinar-fila-izquierda '(2 2 2)) -> '(4 2)
+; (combinar-fila-izquierda '(2 2 2 2)) -> '(4 4)
+(define (combinar-fila-izquierda fila)
+  (cond
+    [(null? fila) '()]
+    [(null? (cdr fila)) (list (car fila))]
+    [(= (car fila) (cadr fila))
+     (cons (+ (car fila) (cadr fila))
+           (combinar-fila-izquierda (cddr fila)))]
+    [else
+     (cons (car fila)
+           (combinar-fila-izquierda (cdr fila)))]))
+
+; rellenar-con-ceros:
+; recibe una fila ya movida/combinada y le agrega ceros
+; al final hasta recuperar el tamaño original.
+; Ejemplo:
+; (rellenar-con-ceros '(4 4) 4) -> '(4 4 0 0)
+(define (rellenar-con-ceros fila tam-original)
+  (concatenar fila
+              (crear-fila (- tam-original
+                             (cantidad-elementos fila)))))
+
+; mover-fila-izquierda:
+; aplica todo el proceso completo a una fila:
+; 1) quita ceros
+; 2) combina iguales
+; 3) rellena con ceros al final
+;
+; Ejemplo:
+; (mover-fila-izquierda '(2 0 2 4)) -> '(4 4 0 0)
+(define (mover-fila-izquierda fila)
+  (rellenar-con-ceros
+   (combinar-fila-izquierda
+    (quitar-ceros-fila fila))
+   (cantidad-elementos fila)))
+
+; mover-tablero-izquierda:
+; aplica mover-fila-izquierda a cada fila del tablero.
+(define (mover-tablero-izquierda tablero)
+  (if (null? tablero)
+      '()
+      (cons (mover-fila-izquierda (car tablero))
+            (mover-tablero-izquierda (cdr tablero)))))
+
+; ------------------------------------------------------------
+; FUNCIONES PARA MOVER A LA DERECHA
+; ------------------------------------------------------------
+
+; invertir-lista:
+; devuelve una lista en orden inverso.
+; Ejemplo:
+; (invertir-lista '(1 2 3 4)) -> '(4 3 2 1)
+(define (invertir-lista lista)
+  (invertir-lista-aux lista '()))
+
+; invertir-lista-aux:
+; acumulador para invertir la lista.
+(define (invertir-lista-aux lista acumulado)
+  (if (null? lista)
+      acumulado
+      (invertir-lista-aux (cdr lista)
+                          (cons (car lista) acumulado))))
+
+; mover-fila-derecha:
+; invierte la fila, aplica mover-fila-izquierda
+; y luego vuelve a invertir.
+;
+; Ejemplo:
+; (mover-fila-derecha '(2 0 2 4)) -> '(0 0 4 4)
+(define (mover-fila-derecha fila)
+  (invertir-lista
+   (mover-fila-izquierda
+    (invertir-lista fila))))
+
+; mover-tablero-derecha:
+; aplica mover-fila-derecha a cada fila del tablero.
+(define (mover-tablero-derecha tablero)
+  (if (null? tablero)
+      '()
+      (cons (mover-fila-derecha (car tablero))
+            (mover-tablero-derecha (cdr tablero)))))
 ; ------------------------------------------------------------
 ; FUNCIÓN PARA INSERTAR UN VALOR EN EL TABLERO
 ; ------------------------------------------------------------
