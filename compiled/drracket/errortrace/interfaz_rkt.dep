@@ -1,0 +1,1 @@
+("9.1" ta6nt ("b62844a865e58dcd80286197ffc18deeab656f68" . "9b472859ad32e1561b5905c8eb3f0f7a6764e2e0") #"C:\\Users\\luisa\\Documents\\GitHub\\2048\\logica.rkt" (collects #"drracket" #"private" #"drracket-errortrace-key.rkt") (collects #"racket" #"gui.rkt") (collects #"racket" #"main.rkt") (collects #"racket" #"runtime-config.rkt"))

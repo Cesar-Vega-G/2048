@@ -1,6 +1,7 @@
 #lang racket
 
 (require "logica.rkt")
+(require "interfaz.rkt")
 
 ; ------------------------------------------------------------
 ; TABLERO INICIAL
@@ -193,3 +194,5 @@
     (4 0 4 2)
     (2 4 2 4)
     (4 2 4 2))))
+
+(iniciar-interfaz)
