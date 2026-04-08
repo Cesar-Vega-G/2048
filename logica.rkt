@@ -1,7 +1,7 @@
 #lang racket
 
-; Exporta estas funciones para poder usarlas desde otros archivos,
-; por ejemplo desde main.rkt o desde interfaz.rkt
+; Se exporta estas funciones para poder usarlas desde otros archivos,
+
 (provide crear-tablero
          imprimir-tablero
          posiciones-vacias
@@ -10,7 +10,11 @@
          mover-fila-izquierda
          mover-tablero-izquierda
          mover-fila-derecha
-         mover-tablero-derecha)
+         mover-tablero-derecha
+         obtener-columna
+         reemplazar-columna
+         mover-tablero-arriba
+         mover-tablero-abajo)
 
 ; ------------------------------------------------------------
 ; FUNCIONES PARA CREAR EL TABLERO
@@ -18,8 +22,7 @@
 
 ; crear-fila:
 ; recibe un número n y construye una lista con n ceros.
-; Ejemplo:
-; (crear-fila 4) -> '(0 0 0 0)
+
 (define (crear-fila n)
   (if (= n 0)
       '()
@@ -28,8 +31,7 @@
 ; crear-tablero:
 ; recibe cantidad de filas y columnas.
 ; Construye una lista de listas llena de ceros.
-; Ejemplo:
-; (crear-tablero 2 3) -> '((0 0 0) (0 0 0))
+
 (define (crear-tablero filas columnas)
   (if (= filas 0)
       '()
@@ -59,8 +61,7 @@
 ; devuelve el elemento que está en una posición específica
 ; dentro de una lista.
 ; Si la lista se acaba, devuelve #f.
-; Ejemplo:
-; (elemento-en '(10 20 30) 1) -> 20
+
 (define (elemento-en lista indice)
   (cond
     [(null? lista) #f]
@@ -69,9 +70,7 @@
 
 ; reemplazar-en-lista:
 ; reemplaza el valor que está en una posición de una lista
-; por otro nuevo valor.
-; Ejemplo:
-; (reemplazar-en-lista '(1 2 3) 1 9) -> '(1 9 3)
+
 (define (reemplazar-en-lista lista indice valor)
   (cond
     [(null? lista) '()]
@@ -100,8 +99,7 @@
 
 ; quitar-ceros-fila:
 ; elimina todos los 0 de una fila.
-; Ejemplo:
-; (quitar-ceros-fila '(2 0 2 4)) -> '(2 2 4)
+
 (define (quitar-ceros-fila fila)
   (cond
     [(null? fila) '()]
@@ -114,10 +112,7 @@
 ; combinar-fila-izquierda:
 ; asume que la fila ya no tiene ceros.
 ; combina solo una vez por jugada.
-; Ejemplos:
-; (combinar-fila-izquierda '(2 2 4)) -> '(4 4)
-; (combinar-fila-izquierda '(2 2 2)) -> '(4 2)
-; (combinar-fila-izquierda '(2 2 2 2)) -> '(4 4)
+
 (define (combinar-fila-izquierda fila)
   (cond
     [(null? fila) '()]
@@ -132,8 +127,7 @@
 ; rellenar-con-ceros:
 ; recibe una fila ya movida/combinada y le agrega ceros
 ; al final hasta recuperar el tamaño original.
-; Ejemplo:
-; (rellenar-con-ceros '(4 4) 4) -> '(4 4 0 0)
+
 (define (rellenar-con-ceros fila tam-original)
   (concatenar fila
               (crear-fila (- tam-original
@@ -144,9 +138,7 @@
 ; 1) quita ceros
 ; 2) combina iguales
 ; 3) rellena con ceros al final
-;
-; Ejemplo:
-; (mover-fila-izquierda '(2 0 2 4)) -> '(4 4 0 0)
+
 (define (mover-fila-izquierda fila)
   (rellenar-con-ceros
    (combinar-fila-izquierda
@@ -167,8 +159,7 @@
 
 ; invertir-lista:
 ; devuelve una lista en orden inverso.
-; Ejemplo:
-; (invertir-lista '(1 2 3 4)) -> '(4 3 2 1)
+
 (define (invertir-lista lista)
   (invertir-lista-aux lista '()))
 
@@ -183,9 +174,7 @@
 ; mover-fila-derecha:
 ; invierte la fila, aplica mover-fila-izquierda
 ; y luego vuelve a invertir.
-;
-; Ejemplo:
-; (mover-fila-derecha '(2 0 2 4)) -> '(0 0 4 4)
+
 (define (mover-fila-derecha fila)
   (invertir-lista
    (mover-fila-izquierda
@@ -198,6 +187,91 @@
       '()
       (cons (mover-fila-derecha (car tablero))
             (mover-tablero-derecha (cdr tablero)))))
+
+; ------------------------------------------------------------
+; FUNCIONES PARA MANIPULAR COLUMNAS
+; ------------------------------------------------------------
+
+; obtener-columna:
+; recibe un tablero y un índice de columna.
+; devuelve una lista con los elementos de esa columna.
+
+(define (obtener-columna tablero indice-columna)
+  (if (null? tablero)
+      '()
+      (cons (elemento-en (car tablero) indice-columna)
+            (obtener-columna (cdr tablero) indice-columna))))
+
+; reemplazar-columna:
+; recibe un tablero, un índice de columna y una nueva columna.
+; devuelve un nuevo tablero con esa columna sustituida.
+
+(define (reemplazar-columna tablero indice-columna nueva-columna)
+  (cond
+    [(null? tablero) '()]
+    [(null? nueva-columna) '()]
+    [else
+     (cons (reemplazar-en-lista (car tablero)
+                                indice-columna
+                                (car nueva-columna))
+           (reemplazar-columna (cdr tablero)
+                               indice-columna
+                               (cdr nueva-columna)))]))
+
+; ------------------------------------------------------------
+; FUNCIONES PARA MOVER ARRIBA
+; ------------------------------------------------------------
+
+; mover-columnas-arriba:
+; recorre todas las columnas del tablero y aplica
+; mover-fila-izquierda a cada columna.
+(define (mover-columnas-arriba tablero indice-columna total-columnas)
+  (if (= indice-columna total-columnas)
+      tablero
+      (mover-columnas-arriba
+       (reemplazar-columna tablero
+                           indice-columna
+                           (mover-fila-izquierda
+                            (obtener-columna tablero indice-columna)))
+       (+ indice-columna 1)
+       total-columnas)))
+
+; mover-tablero-arriba:
+; mueve todas las columnas hacia arriba.
+(define (mover-tablero-arriba tablero)
+  (if (null? tablero)
+      '()
+      (mover-columnas-arriba tablero
+                             0
+                             (cantidad-elementos (car tablero)))))
+
+; ------------------------------------------------------------
+; FUNCIONES PARA MOVER ABAJO
+; ------------------------------------------------------------
+
+; mover-columnas-abajo:
+; recorre todas las columnas del tablero y aplica
+; mover-fila-derecha a cada columna.
+(define (mover-columnas-abajo tablero indice-columna total-columnas)
+  (if (= indice-columna total-columnas)
+      tablero
+      (mover-columnas-abajo
+       (reemplazar-columna tablero
+                           indice-columna
+                           (mover-fila-derecha
+                            (obtener-columna tablero indice-columna)))
+       (+ indice-columna 1)
+       total-columnas)))
+
+; mover-tablero-abajo:
+; mueve todas las columnas hacia abajo.
+(define (mover-tablero-abajo tablero)
+  (if (null? tablero)
+      '()
+      (mover-columnas-abajo tablero
+                            0
+                            (cantidad-elementos (car tablero)))))
+
 ; ------------------------------------------------------------
 ; FUNCIÓN PARA INSERTAR UN VALOR EN EL TABLERO
 ; ------------------------------------------------------------
@@ -206,14 +280,7 @@
 ; recibe un tablero, una fila, una columna y un valor.
 ; Devuelve un nuevo tablero con ese valor colocado
 ; en la posición indicada.
-;
-; Importante:
-; no modifica el tablero original, sino que construye uno nuevo.
-; Eso va muy acorde con la idea de programación funcional.
-;
-; Ejemplo:
-; (insertar-en-posicion '((0 0) (0 0)) 1 0 2)
-; -> '((0 0) (2 0))
+
 (define (insertar-en-posicion tablero fila columna valor)
   (cond
     [(null? tablero) '()]
@@ -233,10 +300,7 @@
 ; donde hay un 0.
 ; Cada posición se representa como:
 ; '(fila columna)
-;
-; Ejemplo:
-; si una casilla vacía está en fila 2 columna 3,
-; en la lista aparecerá '(2 3)
+
 (define (posiciones-vacias tablero)
 
   ; aux-filas:
@@ -280,22 +344,19 @@
 ; busca las posiciones vacías del tablero,
 ; elige una de ellas al azar,
 ; e inserta un 2 en esa posición.
-;
-; OJO:
-; esta versión usa let*, y el enunciado indica que no se permite
-; usar let, map, apply ni derivados.
-; Entonces esta función sirve para avanzar hoy,
-; pero luego conviene reescribirla sin let* para evitar problemas.
 (define (insertar-un-2-random tablero)
-  (let* ([vacias (posiciones-vacias tablero)]
-         [pos (elemento-random vacias)])
-    (if (not pos)
-        tablero
-        (insertar-en-posicion tablero
-                              (car pos)
-                              (cadr pos)
-                              2))))
+  (insertar-un-2-random-aux tablero
+                            (elemento-random
+                             (posiciones-vacias tablero))))
 
+; insertar-un-2-random-aux:
+(define (insertar-un-2-random-aux tablero pos)
+  (if (not pos)
+      tablero
+      (insertar-en-posicion tablero
+                            (car pos)
+                            (cadr pos)
+                            2)))
 ; insertar-dos-iniciales:
 ; inserta un 2 aleatorio y luego otro 2 aleatorio.
 ; Así se genera el estado inicial del juego.

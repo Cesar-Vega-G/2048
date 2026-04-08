@@ -52,3 +52,19 @@
     (2 2 2 0)
     (0 4 0 4)
     (2 0 0 2))))
+
+(displayln "Prueba mover tablero arriba:")
+(imprimir-tablero
+ (mover-tablero-arriba
+  '((2 0 2 4)
+    (2 2 0 4)
+    (0 2 2 0)
+    (0 0 2 4))))
+
+(displayln "Prueba mover tablero abajo:")
+(imprimir-tablero
+ (mover-tablero-abajo
+  '((2 0 2 4)
+    (2 2 0 4)
+    (0 2 2 0)
+    (0 0 2 4))))
