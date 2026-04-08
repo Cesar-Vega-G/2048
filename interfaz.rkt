@@ -1,116 +1,200 @@
 #lang racket
-
 (require racket/gui)
 (require "logica.rkt")
 
 (provide iniciar-interfaz)
 
 ; --------------------------------------------
-; Constantes de dibujo
+; Colores por valor de ficha
 ; --------------------------------------------
 
-(define TAM-CASILLA 80)
-(define MARGEN 10)
-(define ANCHO 400)
-(define ALTO 450)
-
-; --------------------------------------------
-; Estado actual del juego
-; --------------------------------------------
-
-(define tablero-actual
-  (insertar-dos-iniciales (crear-tablero 4 4)))
-
-(define puntaje-actual 0)
-
-; --------------------------------------------
-; Funciones auxiliares
-; --------------------------------------------
-
-(define (numero-a-texto n)
-  (if (= n 0)
-      ""
-      (number->string n)))
-
-(define (dibujar-celda dc fila col valor)
-  (send dc draw-rectangle
-        (+ MARGEN (* col TAM-CASILLA))
-        (+ 50 (* fila TAM-CASILLA))
-        TAM-CASILLA
-        TAM-CASILLA)
-
-  (send dc draw-text
-        (numero-a-texto valor)
-        (+ MARGEN (* col TAM-CASILLA) 30)
-        (+ 50 (* fila TAM-CASILLA) 30)))
-
-(define (dibujar-fila dc fila fila-indice col-indice)
+(define (color-ficha valor)
   (cond
-    [(null? fila) (void)]
-    [else
-     (dibujar-celda dc fila-indice col-indice (car fila))
-     (dibujar-fila dc (cdr fila) fila-indice (+ col-indice 1))]))
+    [(= valor 0)    "lightgray"]
+    [(= valor 2)    "#eee4da"]
+    [(= valor 4)    "#ede0c8"]
+    [(= valor 8)    "#f2b179"]
+    [(= valor 16)   "#f59563"]
+    [(= valor 32)   "#f67c5f"]
+    [(= valor 64)   "#f65e3b"]
+    [(= valor 128)  "#edcf72"]
+    [(= valor 256)  "#edcc61"]
+    [(= valor 512)  "#edc850"]
+    [(= valor 1024) "#edc53f"]
+    [(= valor 2048) "#edc22e"]
+    [else           "#3c3a32"]))
 
-(define (dibujar-tablero dc tablero fila-indice)
-  (cond
-    [(null? tablero) (void)]
-    [else
-     (dibujar-fila dc (car tablero) fila-indice 0)
-     (dibujar-tablero dc (cdr tablero) (+ fila-indice 1))]))
-
-(define (dibujar-pantalla dc)
-  (send dc clear)
-  (send dc draw-text
-        (string-append "Puntaje: " (number->string puntaje-actual))
-        10
-        10)
-  (dibujar-tablero dc tablero-actual 0))
+(define (color-texto valor)
+  (if (< valor 16) "#776e65" "white"))
 
 ; --------------------------------------------
-; Movimiento según tecla
+; Ventana del juego
 ; --------------------------------------------
 
-(define (mover-segun-tecla tecla)
-  (cond
-    [(equal? tecla 'left)  (actualizar-juego 'izquierda)]
-    [(equal? tecla 'right) (actualizar-juego 'derecha)]
-    [(equal? tecla 'up)    (actualizar-juego 'arriba)]
-    [(equal? tecla 'down)  (actualizar-juego 'abajo)]
-    [else (void)]))
+(define (iniciar-juego filas columnas)
+  (define TAM-CASILLA 80)
+  (define MARGEN 10)
+  (define ANCHO (+ (* columnas TAM-CASILLA) (* 2 MARGEN)))
+  (define ALTO (+ (* filas TAM-CASILLA) 80))
 
-(define (actualizar-juego direccion)
-  (define resultado
-    (aplicar-jugada-con-puntos tablero-actual direccion puntaje-actual))
+  ; estado del juego
+  (define estado-tablero
+    (box (insertar-dos-iniciales (crear-tablero filas columnas))))
+  (define estado-puntaje (box 0))
+  (define estado-juego (box 'jugando)) ; 'jugando 'victoria 'derrota
 
-  ; Esto asume que la función devuelve:
-  ; (list nuevo-tablero nuevo-puntaje)
-  (set! tablero-actual (car resultado))
-  (set! puntaje-actual (cadr resultado)))
+  ; dibuja una sola celda
+  (define (dibujar-celda dc fila col valor)
+  (define x (+ MARGEN (* col TAM-CASILLA)))
+  (define y (+ 60 (* fila TAM-CASILLA)))
+  
+  ; dibuja el fondo de la celda
+  (send dc set-brush (color-ficha valor) 'solid)
+  (send dc set-pen "white" 2 'solid)
+  (send dc draw-rectangle x y TAM-CASILLA TAM-CASILLA)
+  
+  ; dibuja el número ENCIMA del fondo
+  (when (> valor 0)
+    (define texto (number->string valor))
+    (send dc set-font (make-object font% 22 'default 'normal 'bold))
+    (send dc set-text-foreground (color-texto valor))
+    ; get-text-extent devuelve el ancho y alto del texto
+    (define-values (tw th _ __) (send dc get-text-extent texto))
+    ; centra el texto dentro de la celda
+    (send dc draw-text texto
+          (+ x (round (/ (- TAM-CASILLA tw) 2)))
+          (+ y (round (/ (- TAM-CASILLA th) 2))))))
 
-; --------------------------------------------
-; Interfaz principal
-; --------------------------------------------
+  ; dibuja una fila completa
+  (define (dibujar-fila dc fila fila-idx col-idx)
+    (cond
+      [(null? fila) (void)]
+      [else
+       (dibujar-celda dc fila-idx col-idx (car fila))
+       (dibujar-fila dc (cdr fila) fila-idx (+ col-idx 1))]))
 
-(define (iniciar-interfaz)
+  ; dibuja todo el tablero
+  (define (dibujar-tablero dc tablero fila-idx)
+    (cond
+      [(null? tablero) (void)]
+      [else
+       (dibujar-fila dc (car tablero) fila-idx 0)
+       (dibujar-tablero dc (cdr tablero) (+ fila-idx 1))]))
+
+  ; dibuja la pantalla completa
+  (define (dibujar-todo dc)
+    (send dc set-brush "white" 'solid)
+    (send dc clear)
+    ; puntaje
+    (send dc set-text-foreground "black")
+    (send dc set-font (make-object font% 16 'default 'normal 'bold))
+    (send dc draw-text
+          (string-append "Puntaje: " (number->string (unbox estado-puntaje)))
+          MARGEN 10)
+    ; tablero
+    (dibujar-tablero dc (unbox estado-tablero) 0)
+    ; mensaje de victoria o derrota
+    (cond
+      [(equal? (unbox estado-juego) 'victoria)
+       (send dc set-text-foreground "green")
+       (send dc set-font (make-object font% 28 'default 'normal 'bold))
+       (send dc draw-text "¡Ganaste! 🎉" MARGEN 20)]
+      [(equal? (unbox estado-juego) 'derrota)
+       (send dc set-text-foreground "red")
+       (send dc set-font (make-object font% 28 'default 'normal 'bold))
+       (send dc draw-text "¡Perdiste!" MARGEN 20)]))
+
+  ; procesa una jugada
+  (define (procesar-jugada direccion canvas)
+    (when (equal? (unbox estado-juego) 'jugando)
+      (define resultado
+        (aplicar-jugada-con-puntos (unbox estado-tablero)
+                                   direccion
+                                   (unbox estado-puntaje)))
+      (set-box! estado-tablero (car resultado))
+      (set-box! estado-puntaje (cadr resultado))
+      (cond
+        [(victoria? (unbox estado-tablero))
+         (set-box! estado-juego 'victoria)]
+        [(derrota? (unbox estado-tablero))
+         (set-box! estado-juego 'derrota)])
+      (send canvas refresh)))
+
+  ; ventana del juego
   (define ventana
     (new frame%
          [label "2048"]
          [width ANCHO]
          [height ALTO]))
 
-  (define canvas-juego
-    (new
-     (class canvas%
-       (super-new)
+  (define canvas
+    (new (class canvas%
+           (super-new)
+           (define/override (on-char evento)
+             (define tecla (send evento get-key-code))
+             (cond
+               [(equal? tecla 'left)  (procesar-jugada 'izquierda this)]
+               [(equal? tecla 'right) (procesar-jugada 'derecha this)]
+               [(equal? tecla 'up)    (procesar-jugada 'arriba this)]
+               [(equal? tecla 'down)  (procesar-jugada 'abajo this)])
+             #t)
+           (define/override (on-paint)
+             (dibujar-todo (send this get-dc))))
+         [parent ventana]))
 
-       (define/override (on-char event)
-         (mover-segun-tecla (send event get-key-code))
-         (send this refresh)
-         #t)
-
-       (define/override (on-paint)
-         (dibujar-pantalla (send this get-dc))))
-     [parent ventana]))
-
-  (send canvas-juego focus)
+  (send canvas focus)
   (send ventana show #t))
+
+; --------------------------------------------
+; Ventana del menú
+; --------------------------------------------
+
+(define (iniciar-interfaz)
+  (define menu
+    (new frame%
+         [label "2048 - Seleccionar tamaño"]
+         [width 300]
+         [height 220]))
+
+  ; instrucciones
+  (new message%
+       [parent menu]
+       [label "Ingrese el tamaño del tablero (entre 4 y 10):"])
+
+  ; campo filas
+  (new message% [parent menu] [label "Filas:"])
+  (define campo-filas
+    (new text-field%
+         [parent menu]
+         [label ""]
+         [init-value "4"]))
+
+  ; campo columnas
+  (new message% [parent menu] [label "Columnas:"])
+  (define campo-columnas
+    (new text-field%
+         [parent menu]
+         [label ""]
+         [init-value "4"]))
+
+  ; botón jugar
+  (new button%
+       [parent menu]
+       [label "Jugar"]
+       [callback
+        (lambda (boton evento)
+          (define filas (string->number (send campo-filas get-value)))
+          (define columnas (string->number (send campo-columnas get-value)))
+          (cond
+            ; valida que sean números entre 4 y 10
+            [(or (not filas) (not columnas)
+                 (< filas 4) (> filas 10)
+                 (< columnas 4) (> columnas 10))
+             (message-box "Error"
+                          "Ingrese números válidos entre 4 y 10."
+                          menu)]
+            [else
+             (send menu show #f)  ; cierra el menú
+             (iniciar-juego filas columnas)]))])
+
+  (send menu show #t))
