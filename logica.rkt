@@ -7,21 +7,22 @@
          posiciones-vacias
          insertar-en-posicion
          insertar-dos-iniciales
-         mover-fila-izquierda
-         mover-tablero-izquierda
-         mover-fila-derecha
-         mover-tablero-derecha
          obtener-columna
          reemplazar-columna
-         mover-tablero-arriba
-         mover-tablero-abajo
          tableros-iguales?
          tablero-cambio?
          valor-nuevo-random
          insertar-ficha-random
-         aplicar-movimiento
-         aplicar-jugada
-         victoria?)
+         victoria?
+         derrota?
+         mover-fila-izquierda-con-puntos
+         mover-tablero-izquierda-con-puntos
+         mover-fila-derecha-con-puntos
+         mover-tablero-derecha-con-puntos
+         mover-tablero-arriba-con-puntos
+         mover-tablero-abajo-con-puntos
+         aplicar-movimiento-con-puntos
+         aplicar-jugada-con-puntos)
 
 ; ------------------------------------------------------------
 ; FUNCIONES PARA CREAR EL TABLERO
@@ -86,8 +87,38 @@
      (cons (car lista)
            (reemplazar-en-lista (cdr lista) (- indice 1) valor))]))
 ; ------------------------------------------------------------
-; FUNCIONES PARA MOVER A LA IZQUIERDA
+; FUNCIONES PARA MOVER CON PUNTUACION
 ; ------------------------------------------------------------
+
+; combinar-fila-izquierda-con-puntos:
+; recibe una fila sin ceros y devuelve:
+; 1. fila combinada
+; 2. puntos ganados
+(define (combinar-fila-izquierda-con-puntos fila)
+  (cond
+    [(null? fila) (list '() 0)]
+    [(null? (cdr fila)) (list (list (car fila)) 0)]
+    [(= (car fila) (cadr fila))
+     (combinar-fila-izquierda-con-puntos-suma
+      (+ (car fila) (cadr fila))
+      (combinar-fila-izquierda-con-puntos (cddr fila)))]
+    [else
+     (combinar-fila-izquierda-con-puntos-no-suma
+      (car fila)
+      (combinar-fila-izquierda-con-puntos (cdr fila)))]))
+
+(define (combinar-fila-izquierda-con-puntos-suma nuevo-valor resultado-resto)
+  (list
+   (cons nuevo-valor
+         (car resultado-resto))
+   (+ nuevo-valor
+      (cadr resultado-resto))))
+
+(define (combinar-fila-izquierda-con-puntos-no-suma valor resultado-resto)
+  (list
+   (cons valor
+         (car resultado-resto))
+   (cadr resultado-resto)))
 
 ; cantidad-elementos:
 ; cuenta cuántos elementos tiene una lista.
@@ -97,7 +128,7 @@
       (+ 1 (cantidad-elementos (cdr lista)))))
 
 ; concatenar:
-; une dos listas sin usar funciones prohibidas.
+; une dos listas sin usar map/apply.
 (define (concatenar lista1 lista2)
   (if (null? lista1)
       lista2
@@ -106,7 +137,6 @@
 
 ; quitar-ceros-fila:
 ; elimina todos los 0 de una fila.
-
 (define (quitar-ceros-fila fila)
   (cond
     [(null? fila) '()]
@@ -116,93 +146,104 @@
      (cons (car fila)
            (quitar-ceros-fila (cdr fila)))]))
 
-; combinar-fila-izquierda:
-; asume que la fila ya no tiene ceros.
-; combina solo una vez por jugada.
-
-(define (combinar-fila-izquierda fila)
-  (cond
-    [(null? fila) '()]
-    [(null? (cdr fila)) (list (car fila))]
-    [(= (car fila) (cadr fila))
-     (cons (+ (car fila) (cadr fila))
-           (combinar-fila-izquierda (cddr fila)))]
-    [else
-     (cons (car fila)
-           (combinar-fila-izquierda (cdr fila)))]))
-
 ; rellenar-con-ceros:
-; recibe una fila ya movida/combinada y le agrega ceros
-; al final hasta recuperar el tamaño original.
-
+; agrega ceros al final hasta recuperar el tamaño original.
 (define (rellenar-con-ceros fila tam-original)
   (concatenar fila
               (crear-fila (- tam-original
                              (cantidad-elementos fila)))))
 
-; mover-fila-izquierda:
-; aplica todo el proceso completo a una fila:
-; 1) quita ceros
-; 2) combina iguales
-; 3) rellena con ceros al final
+; mover-fila-izquierda-con-puntos:
+; devuelve:
+; 1. fila final
+; 2. puntos ganados
+(define (mover-fila-izquierda-con-puntos fila)
+  (mover-fila-izquierda-con-puntos-aux
+   fila
+   (combinar-fila-izquierda-con-puntos
+    (quitar-ceros-fila fila))))
 
-(define (mover-fila-izquierda fila)
-  (rellenar-con-ceros
-   (combinar-fila-izquierda
-    (quitar-ceros-fila fila))
-   (cantidad-elementos fila)))
+(define (mover-fila-izquierda-con-puntos-aux fila resultado-combinacion)
+  (list
+   (rellenar-con-ceros
+    (car resultado-combinacion)
+    (cantidad-elementos fila))
+   (cadr resultado-combinacion)))
 
-; mover-tablero-izquierda:
-; aplica mover-fila-izquierda a cada fila del tablero.
-(define (mover-tablero-izquierda tablero)
-  (if (null? tablero)
-      '()
-      (cons (mover-fila-izquierda (car tablero))
-            (mover-tablero-izquierda (cdr tablero)))))
+; mover-tablero-izquierda-con-puntos:
+; devuelve:
+; 1. tablero final
+; 2. puntos ganados
+(define (mover-tablero-izquierda-con-puntos tablero)
+  (cond
+    [(null? tablero) (list '() 0)]
+    [else
+     (mover-tablero-izquierda-con-puntos-aux
+      (mover-fila-izquierda-con-puntos (car tablero))
+      (mover-tablero-izquierda-con-puntos (cdr tablero)))]))
+
+(define (mover-tablero-izquierda-con-puntos-aux resultado-fila resultado-resto)
+  (list
+   (cons (car resultado-fila)
+         (car resultado-resto))
+   (+ (cadr resultado-fila)
+      (cadr resultado-resto))))
 
 ; ------------------------------------------------------------
-; FUNCIONES PARA MOVER A LA DERECHA
+; FUNCIONES PARA MOVER A LA DERECHA CON PUNTUACION
 ; ------------------------------------------------------------
 
 ; invertir-lista:
 ; devuelve una lista en orden inverso.
-
 (define (invertir-lista lista)
   (invertir-lista-aux lista '()))
 
-; invertir-lista-aux:
-; acumulador para invertir la lista.
 (define (invertir-lista-aux lista acumulado)
   (if (null? lista)
       acumulado
       (invertir-lista-aux (cdr lista)
                           (cons (car lista) acumulado))))
 
-; mover-fila-derecha:
-; invierte la fila, aplica mover-fila-izquierda
-; y luego vuelve a invertir.
-
-(define (mover-fila-derecha fila)
-  (invertir-lista
-   (mover-fila-izquierda
+; mover-fila-derecha-con-puntos:
+; devuelve:
+; 1. fila final
+; 2. puntos ganados
+(define (mover-fila-derecha-con-puntos fila)
+  (mover-fila-derecha-con-puntos-aux
+   (mover-fila-izquierda-con-puntos
     (invertir-lista fila))))
 
-; mover-tablero-derecha:
-; aplica mover-fila-derecha a cada fila del tablero.
-(define (mover-tablero-derecha tablero)
-  (if (null? tablero)
-      '()
-      (cons (mover-fila-derecha (car tablero))
-            (mover-tablero-derecha (cdr tablero)))))
+(define (mover-fila-derecha-con-puntos-aux resultado-izquierda)
+  (list
+   (invertir-lista (car resultado-izquierda))
+   (cadr resultado-izquierda)))
+
+; mover-tablero-derecha-con-puntos:
+; devuelve:
+; 1. tablero final
+; 2. puntos ganados
+(define (mover-tablero-derecha-con-puntos tablero)
+  (cond
+    [(null? tablero) (list '() 0)]
+    [else
+     (mover-tablero-derecha-con-puntos-aux
+      (mover-fila-derecha-con-puntos (car tablero))
+      (mover-tablero-derecha-con-puntos (cdr tablero)))]))
+
+(define (mover-tablero-derecha-con-puntos-aux resultado-fila resultado-resto)
+  (list
+   (cons (car resultado-fila)
+         (car resultado-resto))
+   (+ (cadr resultado-fila)
+      (cadr resultado-resto))))
 
 ; ------------------------------------------------------------
-; FUNCIONES PARA MANIPULAR COLUMNAS
+; FUNCIONES PARA MOVER ARRIBA CON PUNTUACION
 ; ------------------------------------------------------------
 
 ; obtener-columna:
 ; recibe un tablero y un índice de columna.
 ; devuelve una lista con los elementos de esa columna.
-
 (define (obtener-columna tablero indice-columna)
   (if (null? tablero)
       '()
@@ -212,7 +253,6 @@
 ; reemplazar-columna:
 ; recibe un tablero, un índice de columna y una nueva columna.
 ; devuelve un nuevo tablero con esa columna sustituida.
-
 (define (reemplazar-columna tablero indice-columna nueva-columna)
   (cond
     [(null? tablero) '()]
@@ -225,59 +265,87 @@
                                indice-columna
                                (cdr nueva-columna)))]))
 
-; ------------------------------------------------------------
-; FUNCIONES PARA MOVER ARRIBA
-; ------------------------------------------------------------
-
-; mover-columnas-arriba:
-; recorre todas las columnas del tablero y aplica
-; mover-fila-izquierda a cada columna.
-(define (mover-columnas-arriba tablero indice-columna total-columnas)
+(define (mover-columnas-arriba-con-puntos tablero indice-columna total-columnas)
   (if (= indice-columna total-columnas)
-      tablero
-      (mover-columnas-arriba
-       (reemplazar-columna tablero
-                           indice-columna
-                           (mover-fila-izquierda
-                            (obtener-columna tablero indice-columna)))
-       (+ indice-columna 1)
-       total-columnas)))
+      (list tablero 0)
+      (mover-columnas-arriba-con-puntos-aux
+       tablero
+       indice-columna
+       total-columnas
+       (mover-fila-izquierda-con-puntos
+        (obtener-columna tablero indice-columna)))))
 
-; mover-tablero-arriba:
-; mueve todas las columnas hacia arriba.
-(define (mover-tablero-arriba tablero)
+(define (mover-columnas-arriba-con-puntos-aux tablero indice-columna total-columnas resultado-columna)
+  (mover-columnas-arriba-con-puntos-aux-2
+   (reemplazar-columna tablero
+                       indice-columna
+                       (car resultado-columna))
+   (+ indice-columna 1)
+   total-columnas
+   (cadr resultado-columna)))
+
+(define (mover-columnas-arriba-con-puntos-aux-2 tablero-actual siguiente-columna total-columnas puntos-columna)
+  (mover-columnas-arriba-con-puntos-aux-3
+   puntos-columna
+   (mover-columnas-arriba-con-puntos tablero-actual
+                                     siguiente-columna
+                                     total-columnas)))
+
+(define (mover-columnas-arriba-con-puntos-aux-3 puntos-columna resultado-resto)
+  (list
+   (car resultado-resto)
+   (+ puntos-columna
+      (cadr resultado-resto))))
+
+(define (mover-tablero-arriba-con-puntos tablero)
   (if (null? tablero)
-      '()
-      (mover-columnas-arriba tablero
-                             0
-                             (cantidad-elementos (car tablero)))))
+      (list '() 0)
+      (mover-columnas-arriba-con-puntos tablero
+                                        0
+                                        (cantidad-elementos (car tablero)))))
 
 ; ------------------------------------------------------------
-; FUNCIONES PARA MOVER ABAJO
+; FUNCIONES PARA MOVER ABAJO CON PUNTUACION
 ; ------------------------------------------------------------
 
-; mover-columnas-abajo:
-; recorre todas las columnas del tablero y aplica
-; mover-fila-derecha a cada columna.
-(define (mover-columnas-abajo tablero indice-columna total-columnas)
+(define (mover-columnas-abajo-con-puntos tablero indice-columna total-columnas)
   (if (= indice-columna total-columnas)
-      tablero
-      (mover-columnas-abajo
-       (reemplazar-columna tablero
-                           indice-columna
-                           (mover-fila-derecha
-                            (obtener-columna tablero indice-columna)))
-       (+ indice-columna 1)
-       total-columnas)))
+      (list tablero 0)
+      (mover-columnas-abajo-con-puntos-aux
+       tablero
+       indice-columna
+       total-columnas
+       (mover-fila-derecha-con-puntos
+        (obtener-columna tablero indice-columna)))))
 
-; mover-tablero-abajo:
-; mueve todas las columnas hacia abajo.
-(define (mover-tablero-abajo tablero)
+(define (mover-columnas-abajo-con-puntos-aux tablero indice-columna total-columnas resultado-columna)
+  (mover-columnas-abajo-con-puntos-aux-2
+   (reemplazar-columna tablero
+                       indice-columna
+                       (car resultado-columna))
+   (+ indice-columna 1)
+   total-columnas
+   (cadr resultado-columna)))
+
+(define (mover-columnas-abajo-con-puntos-aux-2 tablero-actual siguiente-columna total-columnas puntos-columna)
+  (mover-columnas-abajo-con-puntos-aux-3
+   puntos-columna
+   (mover-columnas-abajo-con-puntos tablero-actual
+                                    siguiente-columna
+                                    total-columnas)))
+
+(define (mover-columnas-abajo-con-puntos-aux-3 puntos-columna resultado-resto)
+  (list
+   (car resultado-resto)
+   (+ puntos-columna
+      (cadr resultado-resto))))
+
+(define (mover-tablero-abajo-con-puntos tablero)
   (if (null? tablero)
-      '()
-      (mover-columnas-abajo tablero
-                            0
-                            (cantidad-elementos (car tablero)))))
+      (list '() 0)
+      (mover-columnas-abajo-con-puntos tablero
+                                       0
+                                       (cantidad-elementos (car tablero)))))
 
 ; ------------------------------------------------------------
 ; COMPARAR TABLEROS
@@ -338,42 +406,51 @@
                             (valor-nuevo-random))))
 
 ; ------------------------------------------------------------
-; APLICAR MOVIMIENTOS Y JUGADAS
+; APLICAR MOVIMIENTOS Y JUGADAS CON PUNTUACION
 ; ------------------------------------------------------------
 
-; aplicar-movimiento:
+; aplicar-movimiento-con-puntos:
 ; recibe un tablero y una dirección.
-; direcciones válidas:
-; 'izquierda
-; 'derecha
-; 'arriba
-; 'abajo
-(define (aplicar-movimiento tablero direccion)
+; devuelve:
+; 1. tablero movido
+; 2. puntos ganados en esa jugada
+(define (aplicar-movimiento-con-puntos tablero direccion)
   (cond
     [(equal? direccion 'izquierda)
-     (mover-tablero-izquierda tablero)]
+     (mover-tablero-izquierda-con-puntos tablero)]
     [(equal? direccion 'derecha)
-     (mover-tablero-derecha tablero)]
+     (mover-tablero-derecha-con-puntos tablero)]
     [(equal? direccion 'arriba)
-     (mover-tablero-arriba tablero)]
+     (mover-tablero-arriba-con-puntos tablero)]
     [(equal? direccion 'abajo)
-     (mover-tablero-abajo tablero)]
-    [else tablero]))
+     (mover-tablero-abajo-con-puntos tablero)]
+    [else
+     (list tablero 0)]))
 
-; aplicar-jugada:
-; hace la jugada completa.
-; si el tablero cambió, agrega una ficha nueva.
-; si no cambió, devuelve el tablero original.
-(define (aplicar-jugada tablero direccion)
-  (aplicar-jugada-aux tablero
-                      (aplicar-movimiento tablero direccion)))
+; aplicar-jugada-con-puntos:
+; recibe tablero, direccion y puntaje actual.
+; devuelve:
+; 1. tablero final
+; 2. puntaje total actualizado
+(define (aplicar-jugada-con-puntos tablero direccion puntaje-actual)
+  (aplicar-jugada-con-puntos-aux
+   tablero
+   puntaje-actual
+   (aplicar-movimiento-con-puntos tablero direccion)))
 
-; aplicar-jugada-aux:
-; auxiliar para evitar let.
-(define (aplicar-jugada-aux tablero-original tablero-movido)
+(define (aplicar-jugada-con-puntos-aux tablero puntaje-actual resultado-movimiento)
+  (aplicar-jugada-con-puntos-aux-2
+   tablero
+   puntaje-actual
+   (car resultado-movimiento)
+   (cadr resultado-movimiento)))
+
+(define (aplicar-jugada-con-puntos-aux-2 tablero-original puntaje-actual tablero-movido puntos-ganados)
   (if (tablero-cambio? tablero-original tablero-movido)
-      (insertar-ficha-random tablero-movido)
-      tablero-original))
+      (list
+       (insertar-ficha-random tablero-movido)
+       (+ puntaje-actual puntos-ganados))
+      (list tablero-original puntaje-actual)))
 
 ; ------------------------------------------------------------
 ; DETECTAR VICTORIA
@@ -397,6 +474,48 @@
     [else
      (victoria? (cdr tablero))]))
 
+; ------------------------------------------------------------
+; DETECTAR DERROTA
+; ------------------------------------------------------------
+
+; sin-espacios-vacios?:
+; devuelve #t si el tablero no tiene casillas vacías.
+(define (sin-espacios-vacios? tablero)
+  (null? (posiciones-vacias tablero)))
+
+; no-se-puede-mover-izquierda?:
+; devuelve #t si mover a la izquierda no cambia el tablero.
+(define (no-se-puede-mover-izquierda? tablero)
+  (tableros-iguales? tablero
+                     (car (mover-tablero-izquierda-con-puntos tablero))))
+
+; no-se-puede-mover-derecha?:
+; devuelve #t si mover a la derecha no cambia el tablero.
+(define (no-se-puede-mover-derecha? tablero)
+  (tableros-iguales? tablero
+                     (car (mover-tablero-derecha-con-puntos tablero))))
+
+; no-se-puede-mover-arriba?:
+; devuelve #t si mover arriba no cambia el tablero.
+(define (no-se-puede-mover-arriba? tablero)
+  (tableros-iguales? tablero
+                     (car (mover-tablero-arriba-con-puntos tablero))))
+
+; no-se-puede-mover-abajo?:
+; devuelve #t si mover abajo no cambia el tablero.
+(define (no-se-puede-mover-abajo? tablero)
+  (tableros-iguales? tablero
+                     (car (mover-tablero-abajo-con-puntos tablero))))
+
+; derrota?:
+; hay derrota si no quedan espacios vacíos
+; y además ningún movimiento cambia el tablero.
+(define (derrota? tablero)
+  (and (sin-espacios-vacios? tablero)
+       (no-se-puede-mover-izquierda? tablero)
+       (no-se-puede-mover-derecha? tablero)
+       (no-se-puede-mover-arriba? tablero)
+       (no-se-puede-mover-abajo? tablero)))
 ; ------------------------------------------------------------
 ; FUNCIÓN PARA INSERTAR UN VALOR EN EL TABLERO
 ; ------------------------------------------------------------
