@@ -4,8 +4,7 @@
 ; botones, campos de texto, canvas y captura de eventos.
 (require racket/gui)
 
-; logica.rkt contiene todas las funciones puras del juego:
-; crear tablero, mover fichas, detectar victoria/derrota, etc.
+;Solicita el archivo de lógica
 (require "logica.rkt")
 
 ; exporta iniciar-interfaz para que main.rkt pueda llamarla
