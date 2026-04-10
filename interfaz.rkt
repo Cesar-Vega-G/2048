@@ -428,12 +428,17 @@
           (define columnas (string->number (send campo-columnas get-value)))
           (cond
             ; valida que ambos valores sean números enteros entre 4 y 10
-            [(or (not filas) (not columnas)   ; no son números
-                 (< filas 4) (> filas 10)     ; fuera del rango de filas
-                 (< columnas 4) (> columnas 10)) ; fuera del rango de columnas
+            ; exact-integer? rechaza decimales como 4.5 o 4.0
+            ; ya que string->number los convierte a número válido
+            ; pero no son enteros exactos
+            [(or (not filas) (not columnas)         ; no son números
+                 (not (exact-integer? filas))        ; rechaza decimales en filas
+                 (not (exact-integer? columnas))     ; rechaza decimales en columnas
+                 (< filas 4) (> filas 10)            ; fuera del rango de filas
+                 (< columnas 4) (> columnas 10))     ; fuera del rango de columnas
              ; muestra un cuadro de error sin cerrar el menú
              (message-box "Error"
-                          "Ingrese números válidos entre 4 y 10."
+                          "Ingrese números enteros válidos entre 4 y 10."
                           menu)]
             [else
              (send menu show #f)  ; cierra la ventana del menú

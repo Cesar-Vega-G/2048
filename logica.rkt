@@ -461,7 +461,7 @@
 (define (fila-contiene-2048? fila)
   (cond
     [(null? fila) #f]
-    [(= (car fila) 2048) #t]
+    [(= (car fila) 128) #t]
     [else
      (fila-contiene-2048? (cdr fila))]))
 
